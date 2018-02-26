@@ -5,26 +5,155 @@ date: "February 26, 2018"
 output: html_document
 ---
 
-```{r setup, include = FALSE, echo = FALSE}
+```{r setup, include = FALSE, echo = FALSE, warning = FALSE}
+require(quantmod)
+require(tidyverse)
+require(lubridate)
+require(fBasics)
+require(tseries)
+require(reshape2)
+require(gridExtra)
+require(forecast)
+require(knitr)
+imagedir <- 'c://github//stockprices//images//'
+tickers <- c('AMZN', 'FB', 'GOOGL', 'MSFT', 'TSLA', 'WMT', 'OKTA' )
+today <- ymd(Sys.Date())
+startdate <- today - days(1000)
+enddate <- today - days(15)
+
+
+makeDistribution <- function(stockticker){
+  stock <- data.frame(get.hist.quote(instrument = stockticker, start = startdate, end = enddate))
+  stock$Date <- ymd(row.names(stock))
+  stockcomp <- get.hist.quote(instrument = stockticker, start = enddate + days(1), end = today - days(1))
+  historical <- ggplot(data = stock, aes(x = Date, y = Close)) + 
+    geom_line()
+  distribution <- ggplot(data = stock, aes(Close)) + 
+    geom_histogram() + 
+    coord_flip() 
+  imgref <- paste0(imagedir, stockticker, 'distribution.jpg')
+  jpeg(file = paste0(imagedir, stockticker, 'distribution.jpg'))
+  grid.arrange(historical, distribution, nrow = 1, top = paste(stockticker, "Stock Price and Distribution", sep = " "))
+  
+}
+
+for (t in tickers){
+  makeDistribution(t)
+}
+
+```
+# Not a Day Trader
+
+I like paying attention to the market and making my best guesses as to which stocks will grow. At the same time, I know it's a fool's errand for someone like me to trade everyday. So how can I use my data science skills to forecast my portfolio value? And how can I keep from going insane tracking the ups and downs of each stock?
+
+### Some Guidelines
+I'm not savvy enough to use P/E ratios and cash balances to short stocks or anything like that. In my simplified world, I buy stocks in companies whose products/services I enjoy using, and then I hold them for a really long time. That is, unless I have an inkling the stock is at a local maximum, at which point I unload hoping I've sold high.
+
+This project is to develop forecasts for the stock's high close value in the next month. That way, if the actual close exceeds it, either I need to sell or re-evaluate the model. These are the individual stocks I own right now:
+
+## Amazon
+
+Amazon is on a real tear lately with exponential growth basically since September 2017. I wouldn't have expected their close price distribution to be normal, but it's not terribly far off.
+
+```{r AMZN_a, echo = FALSE, message = FALSE}
+tick <- "GOOGL"
+stock <- data.frame(get.hist.quote(instrument = tick, start = startdate, end = enddate))
+stock$Date <- ymd(row.names(stock))
+
+stockcomp <- get.hist.quote(instrument = tick, start = enddate + days(1), end = today - days(1))
+historical <- ggplot(data = stock, aes(x = Date, y = Close)) + 
+  geom_line()
+
+distribution <- ggplot(data = stock, aes(Close)) + 
+  geom_histogram() + 
+  coord_flip() 
+imgref <- paste0(imagedir, tick, 'distribution.jpg')
+jpeg(file = paste0(imagedir, tick, 'distribution.jpg'))
+
+grid.arrange(historical, distribution, nrow = 1, top = paste(tick, "Stock Price and Distribution", sep = " "))
+
 
 ```
 
-## R Markdown
+![Distribution of Closing Prices](images/AMZNdistribution.jpg?raw=true)
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+Trying to analyze the prices by day is too noisy, and that isn't the framework I'm using anyway. So I'm going to group the close values by week and forecast out the next five weeks' highs. Where possible, I'll use the upper 80% confidence interval so that if the price exceeds even that, I'll sell. So for Amazon, if the stock hits $1648 in the next week, I'll unload it.
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
 
-```{r cars}
-summary(cars)
+```{r AMZN_b, echo = FALSE, message = FALSE}
+tick <- "WMT"
+stock <- data.frame(get.hist.quote(instrument = tick, start = startdate, end = enddate))
+stock$Date <- ymd(row.names(stock))
+makePlot <- function(df){
+  stockgrouped <- df %>%
+    group_by(Week = paste0(year(Date), week(Date))) %>%
+    summarize(MaxHigh = max(High), weekstart = min(Date)) %>%
+    as.data.frame()
+  
+  maxts <- ts(stockgrouped[[2]], start = min(stockgrouped$weekstart), frequency = 52)
+  
+  stockar <- auto.arima(maxts)
+  stockhw <- ets(maxts, 'ZZZ')
+  stocknn <- nnetar(maxts)
+  fcdates <- max(stockgrouped$weekstart) + weeks(seq(1:4))
+  arfc <- forecast(stockar, 4)$upper[,1]
+  hwfc <- forecast(stockhw, 4)$upper[,1]
+  nnfc <- forecast(stocknn, 4)$mean
+  fcs <- data.frame(WeekStart = fcdates, 
+                  ArimaFC = arfc, 
+                  HoltWintersFC = hwfc, 
+                  NeuralNetFC = nnfc)
+  fcs$maxHigh <- apply(fcs[,2:4], 1, max)
+  stockarplot <- autoplot(forecast(stockar, h = 4), legendLabs = NULL)
+  stockhwplot <- autoplot(forecast(stockhw, h = 4))
+  stocknnplot <- autoplot(forecast(stocknn, h = 4))
+  jpeg(paste0(imagedir,tick, 'forecasts.jpg'))
+  print(grid.arrange(stockarplot,
+             stockhwplot,
+             stocknnplot, 
+             nrow = 3)
+  )
+  
+  print(kable(fcs))
+
+}
+
+makePlot(stock)
+
+
+
 ```
 
-## Including Plots
 
-You can also embed plots, for example:
+![Forecast Charts](images/AMZNforecasts.jpg?raw=true)
 
-```{r pressure, echo=FALSE}
-plot(pressure)
-```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+## Facebook
+
+![Facebook Distribution Charts](images/FBforecasts.jpg?raw=true)
+![Facebook Forecast Charts](images/FBforecasts.jpg?raw=true)
+
+## Alphabet
+![Alphabet Distribution Charts](images/GOOGLforecasts.jpg?raw=true)
+![Alphabet Forecast Charts](images/GOOGLforecasts.jpg?raw=true)
+
+## Microsoft
+![Microsoft Distribution Charts](images/MSFTforecasts.jpg?raw=true)
+![Microsoft Forecast Charts](images/MSFTforecasts.jpg?raw=true)
+
+## Tesla
+
+![Tesla Distribution Charts](images/TSLAforecasts.jpg?raw=true)
+![Tesla Forecast Charts](images/TSLAforecasts.jpg?raw=true)
+
+## Walmart
+
+![Walmart Distribution Charts](images/WMTforecasts.jpg?raw=true)
+![Walmart Forecast Charts](images/WMTforecasts.jpg?raw=true)
+
+## Okta
+
+![Okta Distribution Charts](images/OKTAforecasts.jpg?raw=true)
+![Okta Forecast Charts](images/OKTAforecasts.jpg?raw=true)
+
