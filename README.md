@@ -1,37 +1,56 @@
-## Welcome to GitHub Pages
 
-You can use the [editor on GitHub](https://github.com/stephenhage/stockprices/edit/master/README.md) to maintain and preview the content for your website in Markdown files.
+---
+layout: page
+title: "My Stocks"
+author: "Stephen Hage"
+---
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+# Not a Day Trader
 
-### Markdown
+I like paying attention to the market and making my best guesses as to which stocks will grow. At the same time, I know it's a fool's errand for someone like me to trade everyday. So how can I use my data science skills to forecast my portfolio value? And how can I keep from going insane tracking the ups and downs of each stock?
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+### Some Guidelines
+I'm not savvy enough to use P/E ratios and cash balances to short stocks or anything like that. In my simplified world, I buy stocks in companies whose products/services I enjoy using, and then I hold them for a really long time. That is, unless I have an inkling the stock is at a local maximum, at which point I unload hoping I've sold high.
 
-```markdown
-Syntax highlighted code block
+This project is to develop forecasts for the stock's high close value in the next month. That way, if the actual close exceeds it, either I need to sell or re-evaluate the model. These are the individual stocks I own right now:
 
-# Header 1
-## Header 2
-### Header 3
+## Amazon
 
-- Bulleted
-- List
+Amazon is on a real tear lately with exponential growth basically since September 2017. I wouldn't have expected their close price distribution to be normal, but it's not terribly far off.
 
-1. Numbered
-2. List
+![Distribution of Closing Prices](images/AMZNdistribution.jpg?raw=true)
 
-**Bold** and _Italic_ and `Code` text
+Trying to analyze the prices by day is too noisy, and that isn't the framework I'm using anyway. So I'm going to group the close values by week and forecast out the next five weeks' highs. Where possible, I'll use the upper 80% confidence interval so that if the price exceeds even that, I'll sell. So for Amazon, if the stock hits $1648 in the next week, I'll unload it.
 
-[Link](url) and ![Image](src)
-```
+![Forecast Charts](images/AMZNforecasts.jpg?raw=true)
 
-For more details see [GitHub Flavored Markdown](https://guides.github.com/features/mastering-markdown/).
+I replicated the same process for the rest of these stocks:
 
-### Jekyll Themes
+## Facebook
 
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/stephenhage/stockprices/settings). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
+![Facebook Distribution Charts](images/FBdistribution.jpg?raw=true)
+![Facebook Forecast Charts](images/fbforecasts.jpg?raw=true)
 
-### Support or Contact
+## Alphabet
+![Alphabet Distribution Charts](images/GOOGLdistribution.jpg?raw=true)
+![Alphabet Forecast Charts](images/GOOGLforecasts.jpg?raw=true)
 
-Having trouble with Pages? Check out our [documentation](https://help.github.com/categories/github-pages-basics/) or [contact support](https://github.com/contact) and we’ll help you sort it out.
+## Microsoft
+![Microsoft Distribution Charts](images/MSFTdistribution.jpg?raw=true)
+![Microsoft Forecast Charts](images/MSFTforecasts.jpg?raw=true)
+
+## Tesla
+
+![Tesla Distribution Charts](images/TSLAdistribution.jpg?raw=true)
+![Tesla Forecast Charts](images/TSLAforecasts.jpg?raw=true)
+
+## Walmart
+
+![Walmart Distribution Charts](images/WMTdistribution.jpg?raw=true)
+![Walmart Forecast Charts](images/WMTforecasts.jpg?raw=true)
+
+## Okta
+
+![Okta Distribution Charts](images/OKTAdistribution.jpg?raw=true)
+![Okta Forecast Charts](images/OKTAforecasts.jpg?raw=true)
+
